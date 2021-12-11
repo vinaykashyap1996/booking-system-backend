@@ -1,5 +1,7 @@
 const {dateToString} = require("../../helpers/date")
 const Event = require('../../models/events')
+const Users = require("../../models/user");
+
 const {transformEvent} = require("./global_resolvers");
 
 module.exports = {
@@ -12,18 +14,21 @@ module.exports = {
             throw err;
         })
     },
-    createEvent: (args) => {
+    createEvent: (args,req) => {
+        if(!req.isAuth){
+            throw new Error("Unauthenticated")
+        }
         const event = new Event({
             title: args.eventInput.title,
             description: args.eventInput.description,
             price: +args.eventInput.price,
             date: dateToString(args.eventInput.date),
-            creator: "61b226700bdc068facf4a291"
+            creator: req.userId
         })
         let createdEvent;
         return event.save().then(result => {
             createdEvent = transformEvent(result);;
-            return Users.findById("61b226700bdc068facf4a291")
+            return Users.findById(req.userId)
         })
             .then(user => {
                 if (!user) {
